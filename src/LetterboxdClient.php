@@ -38,7 +38,7 @@ class LetterboxdClient
         // Required signature fields
         $query = array_merge($query, [
             'apikey'    => Config::get('letterboxd.key'),
-            'nonce'     => Str::uuid(),
+            'nonce'     => (string)Str::uuid(),
             'timestamp' => time(),
         ]);
 
