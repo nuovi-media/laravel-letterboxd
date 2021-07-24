@@ -1,0 +1,128 @@
+<?php
+
+namespace NuoviMedia\LetterboxdClient;
+
+use Carbon\Carbon;
+use Illuminate\Http\Client\HttpClientException;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
+use JetBrains\PhpStorm\NoReturn;
+
+class LetterboxdClient
+{
+    private const BASE_ENDPOINT = 'https://api.letterboxd.com/api/v0/';
+    private string $access_token, $refresh_token;
+    private Carbon $token_expires_on;
+
+    /**
+     * @throws HttpClientException
+     */
+    #[NoReturn]
+    public function __construct()
+    {
+        $this->authenticate();
+    }
+
+    /**
+     * Executes a signed API request
+     *
+     * @param string $method
+     * @param string $endpoint
+     * @param array|null $query
+     * @param array|null $data
+     * @return Response
+     */
+    private function signedRequest(string $method, string $endpoint, ?array $query = null, ?array $data = null): Response
+    {
+        // Required signature fields
+        $query = [
+            ...$query,
+            'apikey'    => Config::get('letterboxd.key'),
+            'nonce'     => Str::uuid(),
+            'timestamp' => time(),
+        ];
+
+        // Options array for Http::send
+        $options = [
+            'query' => $query,
+            'body'  => $data,
+        ];
+
+        // URI without signature
+        $uri = self::BASE_ENDPOINT . $endpoint . '?' . http_build_query($query);
+
+        // Signed URI
+        $signedUri = $this->getSignedUri(Str::upper($method), $uri, json_encode($data));
+
+        return Http::send($method, $signedUri, $options);
+    }
+
+    /**
+     * Authenticates on Letterboxd
+     * @param bool $refresh
+     * @throws HttpClientException
+     */
+    #[NoReturn]
+    private function authenticate(bool $refresh = false): void
+    {
+        if ($refresh and !$this->isTokenExpired()){
+            $body = [
+                'grant_type' => 'refresh_token',
+                'refresh_token' => $this->refresh_token,
+            ];
+        } else {
+            $body = [
+                'grant_type' => 'password',
+                'username'   => Config::get('letterboxd.username'),
+                'password'   => Config::get('letterboxd.password'),
+            ];
+        }
+        $query = [
+            'apikey'    => Config::get('letterboxd.key'),
+            'nonce'     => (string)Str::uuid(),
+            'timestamp' => time(),
+        ];
+
+        $uri = $this->getSignedUri('POST', self::BASE_ENDPOINT . 'auth/token?' . http_build_query($query), json_encode($body));
+        $response = Http::asForm()->acceptJson()->post($uri, $body);
+
+        if ($response->status() === 200) {
+            $this->access_token = $response['access_token'];
+            $this->refresh_token = $response['refresh_token'];
+            $this->token_expires_on = Carbon::now()->addSeconds($response['expires_in']);
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
+    }
+
+    /**
+     * Checks if the token is expired
+     * @return bool
+     */
+    private function isTokenExpired(): bool
+    {
+        if ($this->token_expires_on) {
+            return Carbon::now()->gt($this->token_expires_on->subSeconds(10));
+        } else {
+            return true;
+        }
+    }
+
+
+    /**
+     * Gets a signed URI
+     *
+     * @param string $method
+     * @param string $uri
+     * @param ?string $body
+     * @return string
+     */
+    private function getSignedUri(string $method, string $uri, ?string $body): string
+    {
+        $data = $method . "\0" . $uri . "\0" . ($body ?: '');
+        $signature = hash_hmac('sha256', $data, Config::get('letterboxd.secret'));
+        return "$uri&signature={$signature}";
+    }
+}
