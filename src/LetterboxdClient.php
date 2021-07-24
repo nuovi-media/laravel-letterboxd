@@ -36,22 +36,20 @@ class LetterboxdClient
     private function signedRequest(string $method, string $endpoint, ?array $query = null, ?array $data = null): Response
     {
         // Required signature fields
-        $query = [
-            ...$query,
+        $query = array_merge($query, [
             'apikey'    => Config::get('letterboxd.key'),
             'nonce'     => Str::uuid(),
             'timestamp' => time(),
-        ];
+        ]);
 
         // URI without signature
         $uri = self::BASE_ENDPOINT . $endpoint . '?' . http_build_query($query);
 
         // Signature
         $signature = $this->getSignature(Str::upper($method), $uri, json_encode($data));
-        $query = [
-            ...$query,
+        $query = array_merge($query, [
             'signature' => $signature,
-        ];
+        ]);
 
         // Options array for Http::send
         $options = [
