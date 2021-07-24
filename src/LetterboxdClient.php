@@ -27,7 +27,6 @@ class LetterboxdClient
 
     /**
      * Executes a signed API request
-     *
      * @param string $method
      * @param string $endpoint
      * @param array|null $query
@@ -44,19 +43,23 @@ class LetterboxdClient
             'timestamp' => time(),
         ];
 
+        // URI without signature
+        $uri = self::BASE_ENDPOINT . $endpoint . '?' . http_build_query($query);
+
+        // Signature
+        $signature = $this->getSignature(Str::upper($method), $uri, json_encode($data));
+        $query = [
+            ...$query,
+            'signature' => $signature,
+        ];
+
         // Options array for Http::send
         $options = [
             'query' => $query,
             'body'  => $data,
         ];
 
-        // URI without signature
-        $uri = self::BASE_ENDPOINT . $endpoint . '?' . http_build_query($query);
-
-        // Signed URI
-        $signedUri = $this->getSignedUri(Str::upper($method), $uri, json_encode($data));
-
-        return Http::send($method, $signedUri, $options);
+        return Http::send($method, self::BASE_ENDPOINT . $endpoint, $options);
     }
 
     /**
@@ -67,9 +70,9 @@ class LetterboxdClient
     #[NoReturn]
     private function authenticate(bool $refresh = false): void
     {
-        if ($refresh and !$this->isTokenExpired()){
+        if ($refresh and !$this->isTokenExpired()) {
             $body = [
-                'grant_type' => 'refresh_token',
+                'grant_type'    => 'refresh_token',
                 'refresh_token' => $this->refresh_token,
             ];
         } else {
@@ -110,6 +113,18 @@ class LetterboxdClient
         }
     }
 
+    /**
+     * Gets a request signature
+     * @param string $method
+     * @param string $uri
+     * @param string|null $body
+     * @return string
+     */
+    private function getSignature(string $method, string $uri, ?string $body): string
+    {
+        $data = $method . "\0" . $uri . "\0" . ($body ?: '');
+        return hash_hmac('sha256', $data, Config::get('letterboxd.secret'));
+    }
 
     /**
      * Gets a signed URI
