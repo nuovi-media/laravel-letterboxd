@@ -15,7 +15,7 @@ use Illuminate\Support\Collection;
  * @property string $originalName;
  * @property Collection|array<string> $alternativeNames;
  * @property int $releaseYear;
- * @property ContributorSummary $director;
+ * @property Collection|array<ContributorSummary> $directors;
  * @property Image $poster;
  * @property Image $adultPoster;
  * @property bool $adult;
@@ -30,7 +30,7 @@ class FilmSummary extends LetterboxdBaseElement
     protected string $originalName;
     protected Collection $alternativeNames;
     protected int $releaseYear;
-    protected ContributorSummary $director;
+    protected Collection $director;
     protected Image $poster;
     protected Image $adultPoster;
     protected bool $adult;
@@ -47,11 +47,11 @@ class FilmSummary extends LetterboxdBaseElement
     }
 
     /**
-     * @param ContributorSummary|array $contributorSummary
+     * @param Collection|array<array|ContributorSummary> $directors
      */
-    protected function setDirector(ContributorSummary|array $contributorSummary)
+    protected function setDirectors(Collection|array $directors)
     {
-        $this->director = is_array($contributorSummary) ? new ContributorSummary($contributorSummary) : $contributorSummary;
+        $this->directors = collect($directors)->map(fn ($director) => is_array($director) ? new ContributorSummary($director) : $director);
     }
 
     /**
