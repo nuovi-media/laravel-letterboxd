@@ -16,17 +16,17 @@ class MemberFilmRelationship extends LetterboxdBaseElement
     protected FilmRelationship $relationship;
 
     /**
-     * @param Member|array $member
+     * @param MemberSummary|array $member
      */
-    public function setMember(Member|array $member)
+    public function setMember(MemberSummary|array $member)
     {
         $this->member = is_array($member) ? new MemberSummary($member) : $member;
     }
 
     /**
-     * @param Member|array $relationship
+     * @param FilmRelationship|array $relationship
      */
-    public function setRelationship(Member|array $relationship)
+    public function setRelationship(FilmRelationship|array $relationship)
     {
         $this->relationship = is_array($relationship) ? new FilmRelationship($relationship) : $relationship;
     }
