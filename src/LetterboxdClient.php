@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use JetBrains\PhpStorm\NoReturn;
+use NuoviMedia\LetterboxdClient\Letterboxd\FilmsResponse;
 
 class LetterboxdClient
 {
@@ -23,6 +24,22 @@ class LetterboxdClient
     public function __construct()
     {
         $this->authenticate();
+    }
+
+    /**
+     * @param array $params
+     * @return FilmsResponse
+     * @throws HttpClientException
+     */
+    public function films(array $params = []): FilmsResponse
+    {
+        $response = $this->signedRequest('GET', 'films', query: $params);
+
+        if($response->status() === 200) {
+            return new FilmsResponse(json_decode($response->body()));
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
     }
 
     /**
