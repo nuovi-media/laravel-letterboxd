@@ -8,7 +8,7 @@
     "illuminate/http": "^8.51",
     "ext-json": "*"
   },
-  "license": "AGPL-3.0-or-later",
+  "license": "GPL-3.0-or-later",
   "authors": [
     {
       "name": "Lorenzo Breda",
