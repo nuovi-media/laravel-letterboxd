@@ -36,7 +36,7 @@ class LetterboxdClient
         $response = $this->signedRequest('GET', 'films', query: $params);
 
         if($response->status() === 200) {
-            return new FilmsResponse(json_decode($response->body()));
+            return new FilmsResponse(json_decode($response->body(), true));
         } else {
             throw new HttpClientException($response->body(), $response->status());
         }
