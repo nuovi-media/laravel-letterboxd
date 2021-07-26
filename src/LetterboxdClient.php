@@ -103,7 +103,7 @@ class LetterboxdClient
             'timestamp' => time(),
         ];
 
-        $uri = $this->getSignedUri('POST', self::BASE_ENDPOINT . 'auth/token?' . http_build_query($query), json_encode($body));
+        $uri = $this->getSignedUri('POST', self::BASE_ENDPOINT . 'auth/token?' . http_build_query($query), http_build_query($body));
         $response = Http::asForm()->acceptJson()->post($uri, $body);
 
         if ($response->status() === 200) {
