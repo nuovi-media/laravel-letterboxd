@@ -19,7 +19,7 @@ class Image extends LetterboxdBaseElement
     /**
      * @param Collection|array<array|ImageSize> $sizes
      */
-    public function setSize(Collection|array $sizes)
+    public function setSizes(Collection|array $sizes)
     {
         $this->sizes = collect($sizes)->map(fn ($size) => is_array($size) ? new ImageSize($size) : $size);
     }
