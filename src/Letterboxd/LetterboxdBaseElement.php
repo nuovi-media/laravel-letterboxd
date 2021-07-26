@@ -11,7 +11,7 @@ abstract class LetterboxdBaseElement
     {
         // Automated setting
         foreach($element as $key => $value) {
-            ${'set' . ucfirst($key)}($value);
+            $this->{'set' . ucfirst($key)}($value);
         }
     }
 
@@ -31,11 +31,11 @@ abstract class LetterboxdBaseElement
 
     public function __get($name)
     {
-        return $this->${'get' . ucfirst($name)}();
+        return $this->{'get' . ucfirst($name)}();
     }
 
     public function __set($name, $value)
     {
-        return $this->${'set' . ucfirst($name)}($value);
+        return $this->{'set' . ucfirst($name)}($value);
     }
 }
