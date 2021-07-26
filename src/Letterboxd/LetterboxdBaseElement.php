@@ -4,7 +4,7 @@
 namespace NuoviMedia\LetterboxdClient\Letterboxd;
 
 
-class LetterboxdBaseElement
+abstract class LetterboxdBaseElement
 {
     // General constructor
     public function __construct(array $element)
@@ -26,6 +26,7 @@ class LetterboxdBaseElement
         if (strncasecmp($method, "set", 3) === 0) {
             $this->$var = $params[0];
         }
+        return null;
     }
 
     public function __get($name)
