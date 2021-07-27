@@ -63,7 +63,7 @@ class LetterboxdClient
         $uri = self::BASE_ENDPOINT . $endpoint . '?' . http_build_query($query);
 
         // Signature
-        $signature = $this->getSignature(Str::upper($method), $uri, json_encode($data));
+        $signature = $this->getSignature(Str::upper($method), $uri, $data ? json_encode($data) : '');
         $query = array_merge($query, [
             'signature' => $signature,
         ]);
