@@ -3,18 +3,17 @@
 
 namespace NuoviMedia\LetterboxdClient\Letterboxd;
 
+
 use Illuminate\Support\Collection;
 
 /**
- * Class FilmsResponse
+ * Class FilmsAutocompleteResponse
  * @package NuoviMedia\LetterboxdClient\Letterboxd
  *
- * @property  string $next
- * @property  Collection|array<FilmSummary> $items
+ * @property Collection|array<FilmSummary> $items
  */
-class FilmsResponse extends LetterboxdBaseElement
+class FilmsAutocompleteResponse extends LetterboxdBaseElement
 {
-    protected string $next;
     protected Collection $items;
 
     /**
