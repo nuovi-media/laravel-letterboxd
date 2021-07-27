@@ -22,6 +22,6 @@ class FilmsResponse extends LetterboxdBaseElement
      */
     protected function setItems(Collection|array $diaryEntries)
     {
-        $this->items = collect($diaryEntries)->each(fn ($diaryEntry) => is_array($diaryEntry) ? new FilmSummary($diaryEntry) : $diaryEntry);
+        $this->items = collect($diaryEntries)->map(fn ($diaryEntry) => is_array($diaryEntry) ? new FilmSummary($diaryEntry) : $diaryEntry);
     }
 }

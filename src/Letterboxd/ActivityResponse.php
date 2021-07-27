@@ -23,6 +23,6 @@ class ActivityResponse extends LetterboxdBaseElement
      */
     protected function setItems(Collection|array $activities)
     {
-        $this->items = collect($activities)->each(fn ($activity) => is_array($activity) ? new ${$activity['type']}($activity) : $activity);
+        $this->items = collect($activities)->map(fn ($activity) => is_array($activity) ? new ${$activity['type']}($activity) : $activity);
     }
 }

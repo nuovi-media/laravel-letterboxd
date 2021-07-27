@@ -93,7 +93,7 @@ class LogEntry extends LetterboxdBaseElement
      */
     protected function setTags2(Collection|array $tags2)
     {
-        $this->tags2 = collect($tags2)->each(fn ($tag) => is_array($tag) ? new Tag($tag) : $tag);
+        $this->tags2 = collect($tags2)->map(fn ($tag) => is_array($tag) ? new Tag($tag) : $tag);
     }
 
     /**
@@ -117,7 +117,7 @@ class LogEntry extends LetterboxdBaseElement
      */
     protected function setLinks(Collection|array $links)
     {
-        $this->links = collect($links)->each(fn ($link) => is_array($link) ? new Link($link) : $link);
+        $this->links = collect($links)->map(fn ($link) => is_array($link) ? new Link($link) : $link);
     }
 
     /**
