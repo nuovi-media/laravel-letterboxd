@@ -3,13 +3,23 @@
 namespace NuoviMedia\LetterboxdClient;
 
 use Carbon\Carbon;
+use Exception;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\HttpClientException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
-use JetBrains\PhpStorm\NoReturn;
+use NuoviMedia\LetterboxdClient\Letterboxd\CountriesResponse;
+use NuoviMedia\LetterboxdClient\Letterboxd\Film;
+use NuoviMedia\LetterboxdClient\Letterboxd\FilmAvailabilityResponse;
+use NuoviMedia\LetterboxdClient\Letterboxd\FilmRelationship;
+use NuoviMedia\LetterboxdClient\Letterboxd\FilmServicesResponse;
 use NuoviMedia\LetterboxdClient\Letterboxd\FilmsResponse;
+use NuoviMedia\LetterboxdClient\Letterboxd\FilmStatistics;
+use NuoviMedia\LetterboxdClient\Letterboxd\GenresResponse;
+use NuoviMedia\LetterboxdClient\Letterboxd\LanguagesResponse;
+use NuoviMedia\LetterboxdClient\Letterboxd\MemberFilmRelationship;
 
 class LetterboxdClient
 {
@@ -20,23 +30,240 @@ class LetterboxdClient
     /**
      * @throws HttpClientException
      */
-    #[NoReturn]
     public function __construct()
     {
         $this->authenticate();
     }
 
     /**
+     * A cursored window over the list of films.
+     * Use the ‘next’ cursor to move through the list. The response will include the film relationships for
+     * the signed-in member and the member indicated by the member LID if specified
+     *
      * @param array $params
+     *     $params = [
+     *         'cursor'               => (string) The pagination cursor
+     *         'perPage'              => (int) The number of items to include per page (default 20, max 100)
+     *         'filmId'               => (string[]) Up to 100 Letterboxd IDs or TMDB IDs (prefixed with 'tmdb:') or
+     *                                   IMDB IDs (prefixed with 'imdb:')
+     *         'genre'                => (string) LID of a genre to filter the list
+     *         'includeGenre'         => (string[]) Up to 100 genres to filter the list
+     *         'includeGenre'         => (string[]) Up to 100 genres to exclude filtering the list
+     *         'country'              => (string) The ISO 639-1 defined code of the production country to filter the list.
+     *         'language'             => (string) The ISO 639-1 defined code of the language to filter the list.
+     *         'decade'               => (int) Release decade starting year (must end in 0)
+     *         'year'                 => (int) Release year
+     *         'service'              => (string) ID of a supported service to filter the film to those available in that service.
+     *         'where'                => (string[]) One or more values to limit the list of films accordingly.
+     *                                   Supported values: Released, NotReleased, InWatchlist, NotInWatchlist, Logged,
+     *                                   NotLogged, Reviewed, NotReviewed, Owned, NotOwned, Rated, NotRated, Liked,
+     *                                   NotLiked, WatchedFromWatchlist, Watched, NotWatched, FeatureLength,
+     *                                   NotFeatureLength, Fiction, Film, TV
+     *         'member'               => LID of a member to limit the returned films according to the value set in
+     *                                   memberRelationship or to access the MemberRating sort options.
+     *         'memberRelationship'   => (string) Must be used with `member`. Specifies the type of relationship to filter
+     *                                   the list. Use `Ignore` if you only intend to specify the member for use with
+     *                                   sort=MemberRating (default: Watched)
+     *                                   Accepted values: Ignore, Watched, NotWatched, Liked, NotLiked, Rated,
+     *                                   NotRated, InWatchlist, NotInWatchlist, Favorited
+     *         'includeFriends'       => (string) Must be used with `member`. `None` only returns films from member
+     *                                   account, `Only` returns films from the member friends and `All` returns both.
+     *                                   (default: None)
+     *                                   Accepted values: None, All, Only
+     *         'tagCode'              => (string) A tag code to filter the list
+     *         'tagger'               => (string) Must ve used with tagCode. LID of a member to focus the tag filter
+     *                                   on the member
+     *         'includeTaggerFriends' => Must be used with tagger. `None` filters tags set by the member. `Only` filters
+     *                                   tags set by the member’s friends, and `All` filters tags set by both.
+     *                                   Accepted values: None, All, Only
+     *         'sort'                 => (string) Sorting order. Refer to http://api-docs.letterboxd.com/#path--films
+     *                                   (default: FilmPopularity)
+     *                                   Accepted values: FilmName, DateLatestFirst, DateEarliestFirst,
+     *                                   ReleaseDateLatestFirst, ReleaseDateEarliestFirst,
+     *                                   AuthenticatedMemberRatingHighToLow, AuthenticatedMemberRatingLowToHigh,
+     *                                   MemberRatingHighToLow, MemberRatingLowToHigh, AverageRatingHighToLow,
+     *                                   AverageRatingLowToHigh, RatingHighToLow, RatingLowToHigh,
+     *                                   FilmDurationShortestFirst, FilmDurationLongestFirst, FilmPopularity,
+     *                                   FilmPopularityThis{Week,Month,Year},
+     *                                   FilmPopularityWithFriends, FilmPopularityWithFriendsThis{Week,Month,Year}
+     *     ]
      * @return FilmsResponse
      * @throws HttpClientException
+     * @throws Exception
      */
-    public function films(array $params = []): FilmsResponse
+    public function getFilms(array $params = []): FilmsResponse
     {
         $response = $this->signedRequest('GET', 'films', query: $params);
 
-        if($response->status() === 200) {
+        if ($response->status() === 200) {
             return new FilmsResponse(json_decode($response->body(), true));
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
+    }
+
+    /**
+     * @return CountriesResponse
+     * @throws HttpClientException
+     * @throws Exception
+     */
+    public function getFilmsCountries(): CountriesResponse
+    {
+        $response = $this->signedRequest('GET', 'films/countries');
+
+        if ($response->status() === 200) {
+            return new CountriesResponse(json_decode($response->body(), true));
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
+    }
+
+    /**
+     * @return FilmServicesResponse
+     * @throws HttpClientException
+     * @throws Exception
+     */
+    public function getFilmsServices(): FilmServicesResponse
+    {
+        $response = $this->signedRequest('GET', 'films/film-services');
+
+        if ($response->status() === 200) {
+            return new FilmServicesResponse(json_decode($response->body(), true));
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
+    }
+
+    /**
+     * @return GenresResponse
+     * @throws HttpClientException
+     * @throws Exception
+     */
+    public function getFilmsGenres(): GenresResponse
+    {
+        $response = $this->signedRequest('GET', 'films/genres');
+
+        if ($response->status() === 200) {
+            return new GenresResponse(json_decode($response->body(), true));
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
+    }
+
+    /**
+     * @return LanguagesResponse
+     * @throws HttpClientException
+     * @throws Exception
+     */
+    public function getFilmsLanguages(): LanguagesResponse
+    {
+        $response = $this->signedRequest('GET', 'films/genres');
+
+        if ($response->status() === 200) {
+            return new LanguagesResponse(json_decode($response->body(), true));
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
+    }
+
+    /**
+     * @param string $id The LID of the film
+     * @return Film
+     * @throws HttpClientException
+     * @throws Exception
+     */
+    public function getFilm(string $id): Film
+    {
+        $response = $this->signedRequest('GET', "film/{$id}");
+
+        if ($response->status() === 200) {
+            return new Film(json_decode($response->body(), true));
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
+    }
+
+    /**
+     * @param string $id The LID of the film
+     * @return FilmAvailabilityResponse
+     * @throws HttpClientException
+     * @throws Exception
+     */
+    public function getFilmAvailability(string $id): FilmAvailabilityResponse
+    {
+        $response = $this->signedRequest('GET', "film/{$id}/availability");
+
+        if ($response->status() === 200) {
+            return new FilmAvailabilityResponse(json_decode($response->body(), true));
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
+    }
+
+    /**
+     * @param string $id The LID of the film
+     * @return FilmRelationship
+     * @throws HttpClientException
+     * @throws Exception
+     */
+    public function getFilmMe(string $id): FilmRelationship
+    {
+        $this->authenticate();
+
+        $response = $this->signedRequest('GET', "film/{$id}/me", auth: true);
+
+        if ($response->status() === 200) {
+            return new FilmRelationship(json_decode($response->body(), true));
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
+    }
+
+    /**
+     * @param string $id The LID of the film
+     * @param array $params
+     *     $params = [
+     *         'cursor'              => (string) The pagination cursor
+     *         'perPage'             => (int) The number of items to include per page (default 20, max 100)
+     *         'sort'                => (string) Sorting order. Defaults to date,
+     *                                  refer to http://api-docs.letterboxd.com/#path--film--id--members
+     *                                  Accepted values: Date, Name, MemberPopularity, MemberPopularityThis{Week,Month,Year}
+     *                                  MemberPopularityWithFriends, MemberPopularityWithFriendsThis{Week,Month,Year}
+     *          'member'             => (string) LID of a member to return members who followed or are followed by them
+     *          'memberRelationship' => (string) Must be used in conjunction with `member` (default: isFollowing)
+     *                                  Accepted values: IsFollowing, IsFollowedBy
+     *          'filmRelationship    => (string) Specify the type of relationship to limit the returned members
+     *                                  accordingly (default: Watched)
+     *                                  Accepted values: Ignore, Watched, NotWatched, Liked, NotLiked, Rated, NotRated,
+     *                                  InWatchList, NotInWatchList, Favorited
+     *     ]
+     * @return MemberFilmRelationship
+     * @throws HttpClientException
+     * @throws Exception
+     */
+    public function getFilmMembers(string $id, array $params = []): MemberFilmRelationship
+    {
+        $response = $this->signedRequest('GET', "film/{$id}/availability", query: $params);
+
+        if ($response->status() === 200) {
+            return new MemberFilmRelationship(json_decode($response->body(), true));
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
+    }
+
+    /**
+     * @param string $id The LID of the film
+     * @return FilmStatistics()
+     * @throws HttpClientException
+     * @throws Exception
+     */
+    public function getFilmStatistics(string $id): FilmStatistics
+    {
+        $response = $this->signedRequest('GET', "film/{$id}/statistics", auth: true);
+
+        if ($response->status() === 200) {
+            return new FilmStatistics(json_decode($response->body(), true));
         } else {
             throw new HttpClientException($response->body(), $response->status());
         }
@@ -48,9 +275,11 @@ class LetterboxdClient
      * @param string $endpoint
      * @param array|null $query
      * @param array|null $data
+     * @param bool $auth
      * @return Response
+     * @throws Exception
      */
-    private function signedRequest(string $method, string $endpoint, ?array $query = null, ?array $data = null): Response
+    private function signedRequest(string $method, string $endpoint, ?array $query = null, ?array $data = null, bool $auth = false): Response
     {
         // Required signature fields
         $query = array_merge($query, [
@@ -74,18 +303,22 @@ class LetterboxdClient
             'body'  => $data,
         ];
 
-        return Http::send($method, self::BASE_ENDPOINT . $endpoint, $options);
+        $http = new Factory();
+
+        if ($auth) {
+            $http = $http->withToken($this->access_token);
+        }
+
+        return $http->send($method, self::BASE_ENDPOINT . $endpoint, $options);
     }
 
     /**
      * Authenticates on Letterboxd
-     * @param bool $refresh
      * @throws HttpClientException
      */
-    #[NoReturn]
-    private function authenticate(bool $refresh = false): void
+    private function authenticate(): void
     {
-        if ($refresh and !$this->isTokenExpired()) {
+        if ($this->isTokenExpired()) {
             $body = [
                 'grant_type'    => 'refresh_token',
                 'refresh_token' => $this->refresh_token,
@@ -121,7 +354,7 @@ class LetterboxdClient
      */
     private function isTokenExpired(): bool
     {
-        if ($this->token_expires_on) {
+        if ($this->token_expires_on ?? false) {
             return Carbon::now()->gt($this->token_expires_on->subSeconds(10));
         } else {
             return true;

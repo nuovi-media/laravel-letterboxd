@@ -6,12 +6,12 @@ namespace NuoviMedia\LetterboxdClient\Letterboxd;
 use Illuminate\Support\Collection;
 
 /**
- * Class FilmServiceResponse
+ * Class FilmServicesResponse
  * @package NuoviMedia\LetterboxdClient\Letterboxd
  *
  * @property Collection<Service> $items
  */
-class FilmServiceResponse extends LetterboxdBaseElement
+class FilmServicesResponse extends LetterboxdBaseElement
 {
     protected Collection $items;
 
