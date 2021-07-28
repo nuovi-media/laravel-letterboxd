@@ -26,7 +26,23 @@ You can initialise the client with
 ```php
 <?php
 
-$client = new \NuoviMedia\LetterboxdClient\LetterboxdClient();
+use NuoviMedia\LetterboxdClient\LetterboxdClient;
+
+$client = new LetterboxdClient();
 ```
 
-The available methods will be documented in a future version.
+Whe heavily based the methods on the [Official Letterboxd API](http://api-docs.letterboxd.com/).
+
+By now, we only implemented the `GET` methods on the `/film` and `/films` endpoints.
+
+The method names are the method in lowercase, followed by the endpoint in CamelCase excluding the
+parameters: `GET film/languages` becomes `getFilmLanguages` and `GET /film/{id}/report` becomes `getFilmReport`.
+
+The only naming exception is `GET film/film-services` which becomes `getFilmServices`.
+
+Any path parameter is a method argument, and the set of the query parameters is the last method argument.
+
+For example, you can obtain the first ten members' relationships sorted by name for a film by calling:
+```php 
+$client->getFimMembers($movie_id, ['perPage' => 10, 'sort' => 'Name']);
+```
