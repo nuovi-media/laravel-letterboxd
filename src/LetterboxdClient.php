@@ -282,7 +282,7 @@ class LetterboxdClient
     private function signedRequest(string $method, string $endpoint, ?array $query = null, ?array $data = null, bool $auth = false): Response
     {
         // Required signature fields
-        $query = array_merge($query, [
+        $query = array_merge($query ?? [], [
             'apikey'    => Config::get('letterboxd.key'),
             'nonce'     => (string)Str::uuid(),
             'timestamp' => time(),
@@ -293,7 +293,7 @@ class LetterboxdClient
 
         // Signature
         $signature = $this->getSignature(Str::upper($method), $uri, $data ? json_encode($data) : '');
-        $query = array_merge($query, [
+        $query = array_merge($query ?? [], [
             'signature' => $signature,
         ]);
 
