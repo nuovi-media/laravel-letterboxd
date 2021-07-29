@@ -320,14 +320,14 @@ class LetterboxdClient
     {
         if ($this->isTokenExpired()) {
             $body = [
-                'grant_type'    => 'refresh_token',
-                'refresh_token' => $this->refresh_token,
-            ];
-        } else {
-            $body = [
                 'grant_type' => 'password',
                 'username'   => Config::get('letterboxd.username'),
                 'password'   => Config::get('letterboxd.password'),
+            ];
+        } else {
+            $body = [
+                'grant_type'    => 'refresh_token',
+                'refresh_token' => $this->refresh_token,
             ];
         }
         $query = [
