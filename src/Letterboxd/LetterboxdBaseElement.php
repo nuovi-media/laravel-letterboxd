@@ -4,9 +4,10 @@
 namespace NuoviMedia\LetterboxdClient\Letterboxd;
 
 
+use ArrayAccess;
 use JsonSerializable;
 
-abstract class LetterboxdBaseElement implements JsonSerializable
+abstract class LetterboxdBaseElement implements JsonSerializable, ArrayAccess
 {
     private array $keys = [];
 
@@ -50,6 +51,26 @@ abstract class LetterboxdBaseElement implements JsonSerializable
     public function jsonSerialize(): array
     {
         return $this->toArray();
+    }
+
+    public function offsetExists($offset): bool
+    {
+        return !!$this->$offset;
+    }
+
+    public function offsetGet($offset)
+    {
+        return $this->$offset;
+    }
+
+    public function offsetSet($offset, $value)
+    {
+        $this->$offset = $value;
+    }
+
+    public function offsetUnset($offset)
+    {
+        unset($this->$offset);
     }
 
     public function toJson(): string
