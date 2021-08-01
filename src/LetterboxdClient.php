@@ -13,12 +13,16 @@ use Illuminate\Support\Str;
 use NuoviMedia\LetterboxdClient\Letterboxd\CountriesResponse;
 use NuoviMedia\LetterboxdClient\Letterboxd\Film;
 use NuoviMedia\LetterboxdClient\Letterboxd\FilmAvailabilityResponse;
+use NuoviMedia\LetterboxdClient\Letterboxd\FilmList;
 use NuoviMedia\LetterboxdClient\Letterboxd\FilmRelationship;
 use NuoviMedia\LetterboxdClient\Letterboxd\FilmServicesResponse;
 use NuoviMedia\LetterboxdClient\Letterboxd\FilmsResponse;
 use NuoviMedia\LetterboxdClient\Letterboxd\FilmStatistics;
 use NuoviMedia\LetterboxdClient\Letterboxd\GenresResponse;
 use NuoviMedia\LetterboxdClient\Letterboxd\LanguagesResponse;
+use NuoviMedia\LetterboxdClient\Letterboxd\LetterboxdBaseElement;
+use NuoviMedia\LetterboxdClient\Letterboxd\ListUpdateRequest;
+use NuoviMedia\LetterboxdClient\Letterboxd\ListUpdateResponse;
 use NuoviMedia\LetterboxdClient\Letterboxd\MemberFilmRelationship;
 
 class LetterboxdClient
@@ -270,16 +274,74 @@ class LetterboxdClient
     }
 
     /**
+     * @param string $id The LID of the list
+     * @return FilmList
+     * @throws HttpClientException
+     * @throws Exception
+     */
+    public function getList(string $id): FilmList
+    {
+        $response = $this->signedRequest('GET', "list/{$id}", auth: true);
+
+        if ($response->status() === 200) {
+            return new FilmList(json_decode($response->body(), true));
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
+    }
+
+    /**
+     * @param string $id The LID of the list.
+     * @param ListUpdateRequest $data Update request
+     * @return ListUpdateResponse
+     * @throws HttpClientException
+     * @throws Exception
+     */
+    public function patchList(string $id, ListUpdateRequest $data): ListUpdateResponse
+    {
+        $this->authenticate();
+
+        $response = $this->signedRequest('PATCH', "list/{$id}", data: $data);
+
+        if ($response->status() === 200) {
+            return new ListUpdateResponse(json_decode($response->body(), true));
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
+    }
+
+    /**
+     * @param string $id The LID of the list.
+     * @return bool false if not found
+     * @throws HttpClientException
+     * @throws Exception
+     */
+    public function deleteList(string $id): bool
+    {
+        $this->authenticate();
+
+        $response = $this->signedRequest('DELETE', "list/{$id}");
+
+        if ($response->status() === 200) {
+            return true;
+        } elseif ($response->status() === 404) {
+            return false;
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
+    }
+
+    /**
      * Executes a signed API request
      * @param string $method
      * @param string $endpoint
      * @param array|null $query
-     * @param array|null $data
+     * @param LetterboxdBaseElement|array|null $data
      * @param bool $auth
      * @return Response
      * @throws Exception
      */
-    private function signedRequest(string $method, string $endpoint, ?array $query = null, ?array $data = null, bool $auth = false): Response
+    private function signedRequest(string $method, string $endpoint, ?array $query = null, LetterboxdBaseElement|array|null $data = null, bool $auth = false): Response
     {
         // Required signature fields
         $query = array_merge($query ?? [], [
@@ -292,7 +354,7 @@ class LetterboxdClient
         $uri = self::BASE_ENDPOINT . $endpoint . '?' . http_build_query($query);
 
         // Signature
-        $signature = $this->getSignature(Str::upper($method), $uri, $data ? json_encode($data) : '');
+        $signature = $this->getSignature(Str::upper($method), $uri, $data ? json_encode(is_array($data) ? $data : $data->toArray()) : '');
         $query = array_merge($query ?? [], [
             'signature' => $signature,
         ]);
