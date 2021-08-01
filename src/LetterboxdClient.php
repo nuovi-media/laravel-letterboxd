@@ -107,6 +107,9 @@ class LetterboxdClient
     }
 
     /**
+     * Get a list of countries supported by the /films endpoint.
+     * Countries are returned in alphabetical order.
+     *
      * @return CountriesResponse
      * @throws HttpClientException
      * @throws Exception
@@ -123,6 +126,10 @@ class LetterboxdClient
     }
 
     /**
+     * Get a list of services supported by the /films endpoint.
+     * Services are returned in logical order. Some services (including ‘My Services’ options) are only available to
+     * paying members, so results will vary based on the authenticated member’s status.
+     *
      * @return FilmServicesResponse
      * @throws HttpClientException
      * @throws Exception
@@ -139,6 +146,9 @@ class LetterboxdClient
     }
 
     /**
+     * Get a list of genres supported by the /films endpoint.
+     * Genres are returned in alphabetical order.
+     *
      * @return GenresResponse
      * @throws HttpClientException
      * @throws Exception
@@ -155,6 +165,9 @@ class LetterboxdClient
     }
 
     /**
+     * Get a list of languages supported by the /films endpoint.
+     * Languages are returned in alphabetical order.
+     *
      * @return LanguagesResponse
      * @throws HttpClientException
      * @throws Exception
@@ -188,6 +201,8 @@ class LetterboxdClient
     }
 
     /**
+     * Get availability data for a film by ID. Only available to first-party API clients.
+     *
      * @param string $id The LID of the film
      * @return FilmAvailabilityResponse
      * @throws HttpClientException
@@ -205,6 +220,8 @@ class LetterboxdClient
     }
 
     /**
+     * Get details of the authenticated member’s relationship with a film by ID.
+     *
      * @param string $id The LID of the film
      * @return FilmRelationship
      * @throws HttpClientException
@@ -224,6 +241,8 @@ class LetterboxdClient
     }
 
     /**
+     * Get details of members’ relationships with a film by ID.
+     *
      * @param string $id The LID of the film
      * @param array $params
      *     $params = [
@@ -257,6 +276,8 @@ class LetterboxdClient
     }
 
     /**
+     * Get statistical data about a film by ID.
+     *
      * @param string $id The LID of the film
      * @return FilmStatistics()
      * @throws HttpClientException
@@ -274,6 +295,8 @@ class LetterboxdClient
     }
 
     /**
+     * Get details of a list by ID.
+     *
      * @param string $id The LID of the list
      * @return FilmList
      * @throws HttpClientException
@@ -291,6 +314,8 @@ class LetterboxdClient
     }
 
     /**
+     * Update a list by ID.
+     *
      * @param string $id The LID of the list.
      * @param ListUpdateRequest $data Update request
      * @return ListUpdateResponse
@@ -311,6 +336,8 @@ class LetterboxdClient
     }
 
     /**
+     * Delete a list by ID.
+     *
      * @param string $id The LID of the list.
      * @return bool false if not found
      * @throws HttpClientException
