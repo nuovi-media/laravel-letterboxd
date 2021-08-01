@@ -23,6 +23,14 @@ class FilmStatistics extends LetterboxdBaseElement
     protected Collection $ratingsHistogram;
 
     /**
+     * @param FilmIdentifier|array $counts
+     */
+    public function setFilm(FilmIdentifier|array $film)
+    {
+        $this->film = is_array($film) ? new FilmIdentifier($film) : $film;
+    }
+
+    /**
      * @param FilmStatisticsCounts|array $counts
      */
     public function setCounts(FilmStatisticsCounts|array $counts)

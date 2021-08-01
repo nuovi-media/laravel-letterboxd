@@ -34,6 +34,7 @@ abstract class LetterboxdBaseElement implements JsonSerializable, ArrayAccess
         }
         if (strncasecmp($method, "set", 3) === 0) {
             $this->$var = $params[0];
+            in_array($var, $this->keys) || $this->keys[] = $var;
         }
         return null;
     }
