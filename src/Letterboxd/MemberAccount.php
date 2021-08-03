@@ -84,9 +84,9 @@ class MemberAccount extends LetterboxdBaseElement
     protected string $subscriptionType;
     protected Member $member;
     protected Collection $campaigns;
-    protected Collection $adultContentPolicy;
-    protected Collection $commentPolicy;
-    protected Collection $accountStatus;
+    protected string $adultContentPolicy;
+    protected string $commentPolicy;
+    protected string $accountStatus;
     protected bool $hideAds;
 
     /**
@@ -111,21 +111,5 @@ class MemberAccount extends LetterboxdBaseElement
     protected function setCampaigns(Collection|array $campaigns)
     {
         $this->campaigns = collect($campaigns);
-    }
-
-    /**
-     * @param Collection|array<string> $adultContentPolicy
-     */
-    protected function setAdultContentPolicy(Collection|array $adultContentPolicy)
-    {
-        $this->adultContentPolicy = collect($adultContentPolicy);
-    }
-
-    /**
-     * @param Collection|array<string> $commentPolicy
-     */
-    protected function setCommentPolicy(Collection|array $commentPolicy)
-    {
-        $this->commentPolicy = collect($commentPolicy);
     }
 }
