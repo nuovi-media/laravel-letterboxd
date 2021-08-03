@@ -117,7 +117,7 @@ class LetterboxdClient
      */
     public function getFilms(array $params = []): FilmsResponse
     {
-        $response = $this->signedRequest('GET', 'films', query: $params);
+        $response = $this->signedRequest('GET', 'films', query: $params, auth: true);
 
         if ($response->status() === 200) {
             return new FilmsResponse(json_decode($response->body(), true));
