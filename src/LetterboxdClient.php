@@ -42,7 +42,7 @@ class LetterboxdClient
     }
 
     /**
-     * Get Me 
+     * Get Me
      *
      * @return MemberAccount
      * @throws HttpClientException
@@ -467,7 +467,7 @@ class LetterboxdClient
         // Options array for Http::send
         $options = [
             'query' => $query,
-            'body'  => $data,
+            'body'  => $data ? json_encode($data) : null,
         ];
 
         $http = new Factory();
@@ -477,7 +477,11 @@ class LetterboxdClient
             $http = $http->withToken($this->access_token);
         }
 
-        return $http->send($method, self::BASE_ENDPOINT . $endpoint, $options);
+        if($data) {
+            $http = $http->contentType('application/json');
+        }
+
+        return $http->accept('application/json')->send($method, self::BASE_ENDPOINT . $endpoint, $options);
     }
 
     /**
