@@ -51,7 +51,7 @@ use Illuminate\Support\Collection;
  * @property boolean $hideAds 											true if member should not be shown ads.
  * 
  */
-class MemberAccount
+class MemberAccount extends LetterboxdBaseElement
 {
     protected string $emailAddress;
     protected bool $emailAddressValidated;
