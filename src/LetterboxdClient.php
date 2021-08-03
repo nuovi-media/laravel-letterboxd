@@ -14,6 +14,7 @@ use NuoviMedia\LetterboxdClient\Letterboxd\CountriesResponse;
 use NuoviMedia\LetterboxdClient\Letterboxd\Film;
 use NuoviMedia\LetterboxdClient\Letterboxd\FilmAvailabilityResponse;
 use NuoviMedia\LetterboxdClient\Letterboxd\FilmList;
+use NuoviMedia\LetterboxdClient\Letterboxd\ListsResponse;
 use NuoviMedia\LetterboxdClient\Letterboxd\FilmRelationship;
 use NuoviMedia\LetterboxdClient\Letterboxd\FilmServicesResponse;
 use NuoviMedia\LetterboxdClient\Letterboxd\FilmsResponse;
@@ -24,6 +25,7 @@ use NuoviMedia\LetterboxdClient\Letterboxd\LetterboxdBaseElement;
 use NuoviMedia\LetterboxdClient\Letterboxd\ListUpdateRequest;
 use NuoviMedia\LetterboxdClient\Letterboxd\ListUpdateResponse;
 use NuoviMedia\LetterboxdClient\Letterboxd\MemberFilmRelationship;
+use NuoviMedia\LetterboxdClient\Letterboxd\MemberAccount;
 
 class LetterboxdClient
 {
@@ -36,7 +38,25 @@ class LetterboxdClient
      */
     public function __construct()
     {
-        $this->authenticate();
+        # ...
+    }
+
+    /**
+     * Get Me 
+     *
+     * @return MemberAccount
+     * @throws HttpClientException
+     * @throws Exception
+     */
+    public function getMe(): MemberAccount
+    {
+        $response = $this->signedRequest('GET', 'me', auth: true);
+
+        if ($response->status() === 200) {
+            return new MemberAccount(json_decode($response->body(), true));
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
     }
 
     /**
@@ -229,8 +249,6 @@ class LetterboxdClient
      */
     public function getFilmMe(string $id): FilmRelationship
     {
-        $this->authenticate();
-
         $response = $this->signedRequest('GET', "film/{$id}/me", auth: true);
 
         if ($response->status() === 200) {
@@ -285,10 +303,74 @@ class LetterboxdClient
      */
     public function getFilmStatistics(string $id): FilmStatistics
     {
-        $response = $this->signedRequest('GET', "film/{$id}/statistics", auth: true);
+        $response = $this->signedRequest('GET', "film/{$id}/statistics");
 
         if ($response->status() === 200) {
             return new FilmStatistics(json_decode($response->body(), true));
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
+    }
+
+    /**
+     *
+     * @param array $params
+     *     $params = [
+     *         'cursor'               => (string) The pagination cursor
+     *         'perPage'              => (int) The number of items to include per page (default 20, max 100)
+     *         'filmId'               => (string[]) Up to 100 Letterboxd IDs or TMDB IDs (prefixed with 'tmdb:') or
+     *                                   IMDB IDs (prefixed with 'imdb:')
+     *         'genre'                => (string) LID of a genre to filter the list
+     *         'includeGenre'         => (string[]) Up to 100 genres to filter the list
+     *         'includeGenre'         => (string[]) Up to 100 genres to exclude filtering the list
+     *         'country'              => (string) The ISO 639-1 defined code of the production country to filter the list.
+     *         'language'             => (string) The ISO 639-1 defined code of the language to filter the list.
+     *         'decade'               => (int) Release decade starting year (must end in 0)
+     *         'year'                 => (int) Release year
+     *         'service'              => (string) ID of a supported service to filter the film to those available in that service.
+     *         'where'                => (string[]) One or more values to limit the list of films accordingly.
+     *                                   Supported values: Released, NotReleased, InWatchlist, NotInWatchlist, Logged,
+     *                                   NotLogged, Reviewed, NotReviewed, Owned, NotOwned, Rated, NotRated, Liked,
+     *                                   NotLiked, WatchedFromWatchlist, Watched, NotWatched, FeatureLength,
+     *                                   NotFeatureLength, Fiction, Film, TV
+     *         'member'               => LID of a member to limit the returned films according to the value set in
+     *                                   memberRelationship or to access the MemberRating sort options.
+     *         'memberRelationship'   => (string) Must be used with `member`. Specifies the type of relationship to filter
+     *                                   the list. Use `Ignore` if you only intend to specify the member for use with
+     *                                   sort=MemberRating (default: Watched)
+     *                                   Accepted values: Ignore, Watched, NotWatched, Liked, NotLiked, Rated,
+     *                                   NotRated, InWatchlist, NotInWatchlist, Favorited
+     *         'includeFriends'       => (string) Must be used with `member`. `None` only returns films from member
+     *                                   account, `Only` returns films from the member friends and `All` returns both.
+     *                                   (default: None)
+     *                                   Accepted values: None, All, Only
+     *         'tagCode'              => (string) A tag code to filter the list
+     *         'tagger'               => (string) Must ve used with tagCode. LID of a member to focus the tag filter
+     *                                   on the member
+     *         'includeTaggerFriends' => Must be used with tagger. `None` filters tags set by the member. `Only` filters
+     *                                   tags set by the member’s friends, and `All` filters tags set by both.
+     *                                   Accepted values: None, All, Only
+     *         'sort'                 => (string) Sorting order. Refer to http://api-docs.letterboxd.com/#path--films
+     *                                   (default: FilmPopularity)
+     *                                   Accepted values: FilmName, DateLatestFirst, DateEarliestFirst,
+     *                                   ReleaseDateLatestFirst, ReleaseDateEarliestFirst,
+     *                                   AuthenticatedMemberRatingHighToLow, AuthenticatedMemberRatingLowToHigh,
+     *                                   MemberRatingHighToLow, MemberRatingLowToHigh, AverageRatingHighToLow,
+     *                                   AverageRatingLowToHigh, RatingHighToLow, RatingLowToHigh,
+     *                                   FilmDurationShortestFirst, FilmDurationLongestFirst, FilmPopularity,
+     *                                   FilmPopularityThis{Week,Month,Year},
+     *                                   FilmPopularityWithFriends, FilmPopularityWithFriendsThis{Week,Month,Year}
+     *     ]
+     * @return ListsResponse
+     * @throws HttpClientException
+     * @throws Exception
+     */
+    public function getLists(array $params): ListsResponse
+    {
+        $response = $this->signedRequest('GET', "lists", query: $params);
+
+        if ($response->status() === 200) {
+            return new ListsResponse(json_decode($response->body(), true));
         } else {
             throw new HttpClientException($response->body(), $response->status());
         }
@@ -304,7 +386,7 @@ class LetterboxdClient
      */
     public function getList(string $id): FilmList
     {
-        $response = $this->signedRequest('GET', "list/{$id}", auth: true);
+        $response = $this->signedRequest('GET', "list/{$id}");
 
         if ($response->status() === 200) {
             return new FilmList(json_decode($response->body(), true));
@@ -324,9 +406,7 @@ class LetterboxdClient
      */
     public function patchList(string $id, ListUpdateRequest $data): ListUpdateResponse
     {
-        $this->authenticate();
-
-        $response = $this->signedRequest('PATCH', "list/{$id}", data: $data);
+        $response = $this->signedRequest('PATCH', "list/{$id}", data: $data, auth: true);
 
         if ($response->status() === 200) {
             return new ListUpdateResponse(json_decode($response->body(), true));
@@ -345,9 +425,7 @@ class LetterboxdClient
      */
     public function deleteList(string $id): bool
     {
-        $this->authenticate();
-
-        $response = $this->signedRequest('DELETE', "list/{$id}");
+        $response = $this->signedRequest('DELETE', "list/{$id}", auth: true);
 
         if ($response->status() === 200) {
             return true;
@@ -395,6 +473,7 @@ class LetterboxdClient
         $http = new Factory();
 
         if ($auth) {
+            $this->authenticate();
             $http = $http->withToken($this->access_token);
         }
 
