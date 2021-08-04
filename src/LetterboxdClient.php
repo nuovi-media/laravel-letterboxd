@@ -560,4 +560,37 @@ class LetterboxdClient
         $signature = hash_hmac('sha256', $data, Config::get('letterboxd.secret'));
         return "$uri&signature={$signature}";
     }
+
+    /**
+     * Keeps making requests over pagination up to set limits
+     *
+     * @param string $method
+     * @param ?array $params
+     * @param ?int $perPage
+     * @param ?int $page
+     * @param ?int $start
+     * @param ?int $limit
+     * @param ?int $pageLimit
+     * @return string
+     */
+    public function paginateRequest($command, ?array $params = [], ?int $perPage = 100, ?int $page = 0, ?int $start = 0, ?int $limit = 1000000000, ?int $pageLimit = 10000000) {
+        $items = collect();
+
+        $cursor = "start=" . ($page ? ($page * $perPage) : $start);
+        
+        while($cursor && $start < $limit && $page < $pageLimit) {
+            $params["cursor"] = $cursor;
+            $params["perPage"] = $perPage > $limit - $start ? $limit - $start : $perPage;
+
+            $response = $this->$command($params);
+
+            $start += count($response->items);
+            $page = ceil($start / $perPage);
+
+            $cursor = $response?->next;
+            $items = $items->merge($response->items);
+        }
+
+        return $items;
+    }
 }
