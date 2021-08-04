@@ -111,13 +111,15 @@ class LetterboxdClient
      *                                   FilmPopularityThis{Week,Month,Year},
      *                                   FilmPopularityWithFriends, FilmPopularityWithFriendsThis{Week,Month,Year}
      *     ]
+     * @param bool $auth
+     * 
      * @return FilmsResponse
      * @throws HttpClientException
      * @throws Exception
      */
-    public function getFilms(array $params = []): FilmsResponse
+    public function getFilms(array $params = [], ?bool $includeMyRelationship = false): FilmsResponse
     {
-        $response = $this->signedRequest('GET', 'films', query: $params, auth: true);
+        $response = $this->signedRequest('GET', 'films', query: $params, auth: $includeMyRelationship);
 
         if ($response->status() === 200) {
             return new FilmsResponse(json_decode($response->body(), true));
@@ -564,33 +566,24 @@ class LetterboxdClient
     /**
      * Keeps making requests over pagination up to set limits
      *
-     * @param string $method
+     * @param string $command
      * @param ?array $params
      * @param ?int $perPage
-     * @param ?int $page
-     * @param ?int $start
      * @param ?int $limit
      * @param ?int $pageLimit
      * @return string
      */
-    public function paginateRequest($command, ?array $params = [], ?int $perPage = 100, ?int $page = 0, ?int $start = 0, ?int $limit = 1000000000, ?int $pageLimit = 10000000) {
-        $items = collect();
+    public function paginateRequest($command, ?array $params = [], ?int $perPage = 100, ?int $limit = 1000000000, ?int $pageLimit = 0) {
+        $limit = $pageLimit ? $pageLimit * $perPage : $limit;
 
-        $cursor = "start=" . ($page ? ($page * $perPage) : $start);
-        
-        while($cursor && $start < $limit && $page < $pageLimit) {
-            $params["cursor"] = $cursor;
-            $params["perPage"] = $perPage > $limit - $start ? $limit - $start : $perPage;
+        return collect($limit < $perPage ? [0] : range(0, $limit - 1, $perPage))->flatMap(function ($startPage) use($command, &$params, $limit, $perPage) {
+            $params["perPage"] = $startPage + $perPage > $limit ? $limit - $startPage : $perPage;
 
             $response = $this->$command($params);
 
-            $start += count($response->items);
-            $page = ceil($start / $perPage);
-
-            $cursor = $response?->next;
-            $items = $items->merge($response->items);
-        }
-
-        return $items;
+            $params["cursor"] = $response?->next;
+            
+            return $response->items;
+        });
     }
 }
