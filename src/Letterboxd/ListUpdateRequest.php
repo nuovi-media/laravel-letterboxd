@@ -51,7 +51,7 @@ class ListUpdateRequest extends LetterboxdBaseElement
     /**
      * @param Collection|array<array|ListUpdateEntry> $entries
      */
-    protected function setTags2(Collection|array $entries)
+    protected function setEntries(Collection|array $entries)
     {
         $this->entries = collect($entries)->map(fn ($entry) => is_array($entry) ? new ListUpdateEntry($entry) : $entry);
     }
@@ -59,7 +59,7 @@ class ListUpdateRequest extends LetterboxdBaseElement
     /**
      * @param Collection|array<string> $share
      */
-    protected function setSharedON(Collection|array $share)
+    protected function setShare(Collection|array $share)
     {
         $this->share = collect($share);
     }

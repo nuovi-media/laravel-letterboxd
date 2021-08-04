@@ -43,9 +43,9 @@ class Member extends MemberSummary
     /**
      * @param Image|array $backDrop
      */
-    protected function setBackDrop(Image|array $backDrop)
+    protected function setBackdrop(Image|array $backDrop)
     {
-        $this->backDrop = is_array($backDrop) ? new Image($backDrop) : $backDrop;
+        $this->backdrop = is_array($backDrop) ? new Image($backDrop) : $backDrop;
     }
 
     /**
@@ -53,7 +53,7 @@ class Member extends MemberSummary
      */
     protected function setFavoriteFilms(Collection|array $favoriteFilms)
     {
-        $this->favoriteFilms = collect($favoriteFilms)->map(fn ($filmsummary) => is_array($filmsummary) ? new FilmSummary($filmsummary) : $filmsummary);
+        $this->favoriteFilms = collect($favoriteFilms)->map(fn ($filmSummary) => is_array($filmSummary) ? new FilmSummary($filmSummary) : $filmSummary);
     }
 
     /**
@@ -75,7 +75,7 @@ class Member extends MemberSummary
     /**
      * @param ListSummary|array $featuredList
      */
-    protected function setfeaturedList($featuredList)
+    protected function setFeaturedList($featuredList)
     {
         $this->featuredList = new ListSummary($featuredList);
     }
@@ -85,6 +85,6 @@ class Member extends MemberSummary
      */
     protected function setTeamMembers(Collection|array $teamMembers)
     {
-        $this->teamMembers = collect($teamMembers)->map(fn ($membersummary) => is_array($membersummary) ? new MemberSummary($membersummary) : $membersummary);
+        $this->teamMembers = collect($teamMembers)->map(fn ($memberSummary) => is_array($memberSummary) ? new MemberSummary($memberSummary) : $memberSummary);
     }
 }

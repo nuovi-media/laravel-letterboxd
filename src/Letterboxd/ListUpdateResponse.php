@@ -24,7 +24,7 @@ class ListUpdateResponse extends LetterboxdBaseElement
      */
     protected function setData(Film|array $film)
     {
-        $this->data = is_array($film) ? new Film($film) : $film;
+        $this->data = is_array($film) ? new FilmList($film) : $film;
     }
 
     /**
