@@ -576,14 +576,19 @@ class LetterboxdClient
     public function paginateRequest($command, ?array $params = [], ?int $perPage = 100, ?int $limit = 1000000000, ?int $pageLimit = 0) {
         $limit = $pageLimit ? $pageLimit * $perPage : $limit;
 
-        return collect($limit < $perPage ? [0] : range(0, $limit - 1, $perPage))->flatMap(function ($startPage) use($command, &$params, $limit, $perPage) {
-            $params["perPage"] = $startPage + $perPage > $limit ? $limit - $startPage : $perPage;
+        $items = collect();
+        $params["perPage"] = $perPage;
+        $params["cursor"] = "";
 
+        while(is_string($params["cursor"]) && $items->count() < $limit) {
             $response = $this->$command($params);
 
+            $items = $items->merge($response->items);
+
+            $params["perPage"] = $items->count() > $limit ? $limit % $perPage : $perPage;            
             $params["cursor"] = $response?->next;
-            
-            return $response->items;
-        });
+        }
+
+        return $items;
     }
 }
