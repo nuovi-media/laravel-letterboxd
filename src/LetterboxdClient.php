@@ -577,7 +577,7 @@ class LetterboxdClient
         $limit = $pageLimit ? $pageLimit * $perPage : $limit;
 
         $items = collect();
-        $params["perPage"] = $perPage;
+        $params["perPage"] = $perPage > $limit ? $limit : $perPage;
         $params["cursor"] = "";
 
         while(is_string($params["cursor"]) && $items->count() < $limit) {
@@ -585,7 +585,7 @@ class LetterboxdClient
 
             $items = $items->merge($response->items);
 
-            $params["perPage"] = $items->count() > $limit ? $limit % $perPage : $perPage;            
+            $params["perPage"] = $items->count() > $limit ? $limit % $perPage : $perPage;
             $params["cursor"] = $response?->next;
         }
 
