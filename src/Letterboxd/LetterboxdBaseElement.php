@@ -26,7 +26,6 @@ abstract class LetterboxdBaseElement implements JsonSerializable, ArrayAccess
     // Automated getters and setters
     public function __call($method, $params)
     {
-
         $var = lcfirst(substr($method, 3));
 
         if (strncasecmp($method, "get", 3) === 0) {
