@@ -26,6 +26,7 @@ use NuoviMedia\LetterboxdClient\Letterboxd\ListUpdateRequest;
 use NuoviMedia\LetterboxdClient\Letterboxd\ListUpdateResponse;
 use NuoviMedia\LetterboxdClient\Letterboxd\MemberFilmRelationship;
 use NuoviMedia\LetterboxdClient\Letterboxd\MemberAccount;
+use NuoviMedia\LetterboxdClient\Letterboxd\SearchResponse;
 
 class LetterboxdClient
 {
@@ -433,6 +434,37 @@ class LetterboxdClient
             return true;
         } elseif ($response->status() === 404) {
             return false;
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
+    }
+
+    /**
+     * @param array $params
+     *     $params = [
+     *         'cursor'               => (string) The pagination cursor
+     *         'perPage'              => (int) The number of items to include per page (default 20, max 100)
+     *         'input'                => (string) (REQUIRED) The word, partial word or phrase to search for.  
+     *         'searchMethod'         => The type of search to perform. Defaults to FullText, which performs a standard
+     *                                   search considering text in all fields. Autocomplete only searches primary fields.
+     *         'include'              => The types of results to search for. Default to all SearchResultTypes.
+     *                                   Supported values: ContributorSearchItem, FilmSearchItem, ListSearchItem, MemberSearchItem,
+     *                                   ReviewSearchItem, TagSearchItem.
+     *         'contributionType'     => The type of contributor to search for. Implies "include=ContributorSearchItem".
+     *                                   Supported values: Director, CoDirector, Actor, Producer, Writer, Editor, Cinematography, ProductionDesign,
+     *                                   ArtDirection, SetDecoration, VisualEffects, Composer, Sound, Costumes, MakeUp, Studio.
+     *         'adult'                => Whether to include adult content in search results. Default to false.
+     *     ]
+     * @return SearchResponse
+     * @throws HttpClientException
+     * @throws Exception
+     */
+    public function search(array $params): SearchResponse
+    {
+        $response = $this->signedRequest('GET', "search", query: $params);
+
+        if ($response->status() === 200) {
+            return new SearchResponse(json_decode($response->body(), true));
         } else {
             throw new HttpClientException($response->body(), $response->status());
         }
