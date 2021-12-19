@@ -109,7 +109,7 @@ class LogEntry extends LetterboxdBaseElement
      */
     protected function setWhenUpdated(Carbon|string $whenUpdated)
     {
-        $this->whenCreated = is_string($whenUpdated) ? Carbon::parse($whenUpdated) : $whenUpdated;
+        $this->whenUpdated = is_string($whenUpdated) ? Carbon::parse($whenUpdated) : $whenUpdated;
     }
 
     /**
