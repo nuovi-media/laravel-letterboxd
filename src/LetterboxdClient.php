@@ -287,7 +287,7 @@ class LetterboxdClient
      */
     public function getFilmMembers(string $id, array $params = []): MemberFilmRelationship
     {
-        $response = $this->signedRequest('GET', "film/{$id}/availability", query: $params);
+        $response = $this->signedRequest('GET', "film/{$id}/members", query: $params);
 
         if ($response->status() === 200) {
             return new MemberFilmRelationship(json_decode($response->body(), true));
