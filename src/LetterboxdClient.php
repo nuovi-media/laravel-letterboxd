@@ -26,6 +26,7 @@ use NuoviMedia\LetterboxdClient\Letterboxd\ListUpdateRequest;
 use NuoviMedia\LetterboxdClient\Letterboxd\ListUpdateResponse;
 use NuoviMedia\LetterboxdClient\Letterboxd\MemberFilmRelationship;
 use NuoviMedia\LetterboxdClient\Letterboxd\MemberAccount;
+use NuoviMedia\LetterboxdClient\Letterboxd\SearchResponse;
 
 class LetterboxdClient
 {
@@ -111,13 +112,15 @@ class LetterboxdClient
      *                                   FilmPopularityThis{Week,Month,Year},
      *                                   FilmPopularityWithFriends, FilmPopularityWithFriendsThis{Week,Month,Year}
      *     ]
+     * @param bool $auth
+     * 
      * @return FilmsResponse
      * @throws HttpClientException
      * @throws Exception
      */
-    public function getFilms(array $params = []): FilmsResponse
+    public function getFilms(array $params = [], ?bool $includeMyRelationship = false): FilmsResponse
     {
-        $response = $this->signedRequest('GET', 'films', query: $params, auth: true);
+        $response = $this->signedRequest('GET', 'films', query: $params, auth: $includeMyRelationship);
 
         if ($response->status() === 200) {
             return new FilmsResponse(json_decode($response->body(), true));
@@ -284,7 +287,7 @@ class LetterboxdClient
      */
     public function getFilmMembers(string $id, array $params = []): MemberFilmRelationship
     {
-        $response = $this->signedRequest('GET', "film/{$id}/availability", query: $params);
+        $response = $this->signedRequest('GET', "film/{$id}/members", query: $params);
 
         if ($response->status() === 200) {
             return new MemberFilmRelationship(json_decode($response->body(), true));
@@ -437,6 +440,37 @@ class LetterboxdClient
     }
 
     /**
+     * @param array $params
+     *     $params = [
+     *         'cursor'               => (string) The pagination cursor
+     *         'perPage'              => (int) The number of items to include per page (default 20, max 100)
+     *         'input'                => (string) (REQUIRED) The word, partial word or phrase to search for.  
+     *         'searchMethod'         => The type of search to perform. Defaults to FullText, which performs a standard
+     *                                   search considering text in all fields. Autocomplete only searches primary fields.
+     *         'include'              => The types of results to search for. Default to all SearchResultTypes.
+     *                                   Supported values: ContributorSearchItem, FilmSearchItem, ListSearchItem, MemberSearchItem,
+     *                                   ReviewSearchItem, TagSearchItem.
+     *         'contributionType'     => The type of contributor to search for. Implies "include=ContributorSearchItem".
+     *                                   Supported values: Director, CoDirector, Actor, Producer, Writer, Editor, Cinematography, ProductionDesign,
+     *                                   ArtDirection, SetDecoration, VisualEffects, Composer, Sound, Costumes, MakeUp, Studio.
+     *         'adult'                => Whether to include adult content in search results. Default to false.
+     *     ]
+     * @return SearchResponse
+     * @throws HttpClientException
+     * @throws Exception
+     */
+    public function search(array $params): SearchResponse
+    {
+        $response = $this->signedRequest('GET', "search", query: $params);
+
+        if ($response->status() === 200) {
+            return new SearchResponse(json_decode($response->body(), true));
+        } else {
+            throw new HttpClientException($response->body(), $response->status());
+        }
+    }
+
+    /**
      * Executes a signed API request
      * @param string $method
      * @param string $endpoint
@@ -559,5 +593,34 @@ class LetterboxdClient
         $data = $method . "\0" . $uri . "\0" . ($body ?: '');
         $signature = hash_hmac('sha256', $data, Config::get('letterboxd.secret'));
         return "$uri&signature={$signature}";
+    }
+
+    /**
+     * Keeps making requests over pagination up to set limits
+     *
+     * @param string $command
+     * @param ?array $params
+     * @param ?int $perPage
+     * @param ?int $limit
+     * @param ?int $pageLimit
+     * @return string
+     */
+    public function paginateRequest($command, ?array $params = [], ?int $perPage = 100, ?int $limit = 1000000000, ?int $pageLimit = 0) {
+        $limit = $pageLimit ? $pageLimit * $perPage : $limit;
+
+        $items = collect();
+        $params["perPage"] = $perPage > $limit ? $limit : $perPage;
+        $params["cursor"] = "";
+
+        while(is_string($params["cursor"]) && $items->count() < $limit) {
+            $response = $this->$command($params);
+
+            $items = $items->merge($response->items);
+
+            $params["perPage"] = $items->count() > $limit ? $limit % $perPage : $perPage;
+            $params["cursor"] = $response?->next;
+        }
+
+        return $items;
     }
 }
