@@ -3,9 +3,9 @@
   "description": "Letterboxd API client for Laravel",
   "type": "library",
   "require": {
-    "illuminate/support": "^8.51",
+    "illuminate/support": "^8.51|^9.0",
     "php": "^8.0",
-    "illuminate/http": "^8.51",
+    "illuminate/http": "^8.51|^9.0",
     "ext-json": "*"
   },
   "license": "GPL-3.0-or-later",
